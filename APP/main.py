@@ -54,27 +54,78 @@ import os
 from pathlib import Path
 from random import randint
 from random import choice
-from nltk.tokenize import word_tokenize
-from nltk.util import ngrams
+
 
 ### Ajouter ici les signes de ponctuation Ã  retirer
 PONC = ["!", '"', "'", ")", "(", ",", ".", ";", ":", "?", "-", "_"]
 
+
 ###  Vous devriez inclure vos classes et mÃ©thodes ici, qui seront appellÃ©es Ã  partir du main
-def dico_maker(texte,dico):
-    dictionnairetemp={}
-    if args.P:
-        text = texte.replace(PONC, " ").lower()
+def dico_maker(texte, dico):
+    dictionnairetemp = dico
+    if not args.P:
+        for i in range(len(PONC)):
+            texte = texte.replace(PONC[i], " ")
+        text = texte.lower()
     else:
         text = texte.lower()
-    n_grams = ngrams(word_tokenize(texte), args.m)
-    dictionnairetemp[n_grams[0]]=1
-    for i in range(len(n_grams)):
-        mot = n_grams[i]
+    gram = []
+    if args.m == 1:
+        gram = texte.split()
+    else:
+        text = texte.split()
+        for i in range(len(text)):
+            j = i
+            if i+1 != len(text):
+                while j+1 != len(text) and len(text[j + 1]) < 3:
+                    j += 1
+                if j+1 != len(text):
+                    gram.append((text[i], text[j + 1]))
+                i = j
+    dictionnairetemp[gram[0]] = 1
+    for i in range(len(gram)):
+        mot = gram[i]
         if mot not in dictionnairetemp:
-            dictionnairetemp[mot]=0
-        dictionnairetemp[mot]+=1
+            dictionnairetemp[mot] = 0
+        dictionnairetemp[mot] += 1
     return dictionnairetemp
+
+
+def mergeSort(myList):
+    if len(myList) > 1:
+        mid = len(myList) // 2
+        left = myList[:mid]
+        right = myList[mid:]
+        # Recursive call on each half
+        mergeSort(left)
+        mergeSort(right)
+        # Two iterators for traversing the two halves
+        i = 0
+        j = 0
+        # Iterator for the main list
+        k = 0
+        while i < len(left) and j < len(right):
+            if left[i] < right[j]:
+                # The value from the left half has been used
+                myList[k] = left[i]
+                # Move the iterator forward
+                i += 1
+            else:
+                myList[k] = right[j]
+                j += 1
+            # Move to the next slot
+            k += 1
+        # For all the remaining values
+        while i < len(left):
+            myList[k] = left[i]
+            i += 1
+            k += 1
+        while j < len(right):
+            myList[k] = right[j]
+            j += 1
+            k += 1
+
+
 ### Main: lecture des paramÃ¨tres et appel des mÃ©thodes appropriÃ©es
 ###
 ###       argparse permet de lire les paramÃ¨tres sur la ligne de commande
@@ -85,7 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('-d', required=True, help='Repertoire contenant les sous-repertoires des auteurs')
     parser.add_argument('-a', help='Auteur a traiter')
     parser.add_argument('-f', help='Fichier inconnu a comparer')
-    parser.add_argument('-m', required=True, type=int, choices=range(1, 2),
+    parser.add_argument('-m', required=True, type=int, choices=range(1, 3),
                         help='Mode (1 ou 2) - unigrammes ou digrammes')
     parser.add_argument('-F', type=int, help='Indication du rang (en frequence) du mot (ou bigramme) a imprimer')
     parser.add_argument('-G', type=int, help='Taille du texte a generer')
@@ -142,12 +193,13 @@ if __name__ == "__main__":
             aut = a.split("/")
             print("    " + aut[-1])
     ### Ã€ partir d'ici, vous devriez inclure les appels Ã  votre code
-    listeDeDico=[]
+    listeDeDico = []
     for i in range(len(authors)):
         lsdir = os.listdir(rep_aut + '/' + authors[i])
         dictionnaire = {}
         for j in range(len(lsdir)):
-            f = open(rep_aut+'/'+authors[i]+'/'+lsdir[j], "r")
-            texte= f.read()
-            dictionnaire = dico_maker(texte , dictionnaire)
+            f = open(rep_aut + '/' + authors[i] + '/' + lsdir[j], "r", encoding="utf8")
+            texte = f.read().lower()
+            dictionnaire = dico_maker(texte, dictionnaire)
+            f.close()
         listeDeDico.append(dictionnaire)
