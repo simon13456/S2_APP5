@@ -61,8 +61,20 @@ from nltk.util import ngrams
 PONC = ["!", '"', "'", ")", "(", ",", ".", ";", ":", "?", "-", "_"]
 
 ###  Vous devriez inclure vos classes et mÃ©thodes ici, qui seront appellÃ©es Ã  partir du main
-
-
+def dico_maker(texte,dico):
+    dictionnairetemp={}
+    if args.P:
+        text = texte.replace(PONC, " ").lower()
+    else:
+        text = texte.lower()
+    n_grams = ngrams(word_tokenize(texte), args.m)
+    dictionnairetemp[n_grams[0]]=1
+    for i in range(len(n_grams)):
+        mot = n_grams[i]
+        if mot not in dictionnairetemp:
+            dictionnairetemp[mot]=0
+        dictionnairetemp[mot]+=1
+    return dictionnairetemp
 ### Main: lecture des paramÃ¨tres et appel des mÃ©thodes appropriÃ©es
 ###
 ###       argparse permet de lire les paramÃ¨tres sur la ligne de commande
@@ -130,8 +142,12 @@ if __name__ == "__main__":
             aut = a.split("/")
             print("    " + aut[-1])
     ### Ã€ partir d'ici, vous devriez inclure les appels Ã  votre code
-    x = []
+    listeDeDico=[]
     for i in range(len(authors)):
-        f = open(rep_aut+"" + authors[i], "r")
-        x += ngrams(word_tokenize(f.read()), args.m)
-    print(' '.join(grams) for grams in x)
+        lsdir = os.listdir(rep_aut + '/' + authors[i])
+        dictionnaire = {}
+        for j in range(len(lsdir)):
+            f = open(rep_aut+'/'+authors[i]+'/'+lsdir[j], "r")
+            texte= f.read()
+            dictionnaire = dico_maker(texte , dictionnaire)
+        listeDeDico.append(dictionnaire)
