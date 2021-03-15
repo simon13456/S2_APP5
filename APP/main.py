@@ -10,24 +10,24 @@
 
 ###  Parametres utilises, leur fonction et code a generer
 ###
-###  -d   Deja traite dans le gabarit:  la variable rep_auth contiendra le chemin complet vers le repertoire d'auteurs
+###  -d X  Deja traite dans le gabarit:  la variable rep_auth contiendra le chemin complet vers le repertoire d'auteurs
 ###       La liste d'auteurs est extraite de ce repertoire, et est comprise dans la variable authors
 ###
-###  -P   Si utilise, indique au systeme d'utiliser la ponctuation.  Ce qui est considÃ©re comme un signe de ponctuation
+###  -P X Si utilise, indique au systeme d'utiliser la ponctuation.  Ce qui est considÃ©re comme un signe de ponctuation
 ###       est defini dans la liste PONC
 ###       Si -P EST utilise, cela indique qu'on dÃ©sire conserver la ponctuation (chaque signe est alors considere
 ###       comme un mot.  Par defaut, la ponctuation devrait etre retiree
 ###
-###  -m   mode d'analyse:  -m 1 indique de faire les calculs avec des unigrammes, -m 2 avec des bigrammes.
+###  -m X mode d'analyse:  -m 1 indique de faire les calculs avec des unigrammes, -m 2 avec des bigrammes.
 ###
-###  -a   Auteur (unique a traiter).  Utile en combinaison avec -g, -G, pour la generation d'un texte aleatoire
+###  -a X Auteur (unique a traiter).  Utile en combinaison avec -g, -G, pour la generation d'un texte aleatoire
 ###       avec les caracteristiques de l'auteur indique
 ###
 ###  -G   Indique qu'on veut generer un texte (voir -a ci-haut), le nombre de mots Ã  generer doit Ãªtre indique
 ###
 ###  -g   Indique qu'on veut generer un texte (voir -a ci-haut), le nom du fichier en sortie est indique
 ###
-###  -F   Indique qu'on desire connaitre le rang d'un certain mot pour un certain auteur.  L'auteur doit etre
+###  -F X Indique qu'on desire connaitre le rang d'un certain mot pour un certain auteur.  L'auteur doit etre
 ###       donnÃ© avec le parametre -a, et un mot doit suivre -F:   par exemple:   -a Verne -F Cyrus
 ###
 ###  -v   Deja traite dans le gabarit:  mode "verbose",  va imprimer les valeurs donnÃ©es en parametre
@@ -51,6 +51,7 @@ import argparse
 import glob
 import sys
 import os
+import numpy
 from pathlib import Path
 from random import randint
 from random import choice
@@ -85,7 +86,6 @@ def dico_maker(texte, dico):
                     gram.append((texte[i], texte[j + 1]))
             i = j
             i += 1
-    dictionnairetemp[gram[0]] = 1
     for i in range(len(gram)):
         mot = gram[i]
         if mot not in dictionnairetemp:
@@ -93,8 +93,14 @@ def dico_maker(texte, dico):
         dictionnairetemp[mot] += 1
     return dictionnairetemp
 
+
 def sort(dictionnaire):
-    return sorted(list(dictionnaire.items()), key=lambda x: x[1],reverse=True)
+    return sorted(list(dictionnaire.items()), key=lambda x: x[1], reverse=True)
+
+
+def poids(freq, nombreTotal):
+    return math.sqrt((freq / nombreTotal) * (freq / nombreTotal))
+
 
 ### Main: lecture des paramÃ¨tres et appel des mÃ©thodes appropriÃ©es
 ###
@@ -165,12 +171,62 @@ if __name__ == "__main__":
     ### Ã€ partir d'ici, vous devriez inclure les appels Ã  votre code
 
     listeDeDico = []
-    for i in range(len(authors)):
-        lsdir = os.listdir(rep_aut + '/' + authors[i])
+    if args.a:
+        lsdir = os.listdir(rep_aut + '/' + args.a)
         dictionnaire = {}
         for j in range(len(lsdir)):
-            f = open(rep_aut + '/' + authors[i] + '/' + lsdir[j], "r", encoding="utf8")
+            f = open(rep_aut + '/' + args.a + '/' + lsdir[j], "r", encoding="utf8")
             texte = f.read().lower()
             dictionnaire = dico_maker(texte, dictionnaire)
             f.close()
         listeDeDico.append(sort(dictionnaire))
+        if args.F:
+            print(listeDeDico[0][args.F - 1])
+    else:
+        for i in range(len(authors)):
+            lsdir = os.listdir(rep_aut + '/' + authors[i])
+            dictionnaire = {}
+            for j in range(len(lsdir)):
+                f = open(rep_aut + '/' + authors[i] + '/' + lsdir[j], "r", encoding="utf8")
+                texte = f.read().lower()
+                dictionnaire = dico_maker(texte, dictionnaire)
+                f.close()
+            listeDeDico.append(sort(dictionnaire))
+        if args.F:
+            for authors in range(len(listeDeDico)):
+                print(listeDeDico[authors][args.F - 1])
+
+    if args.f:
+        listeTexteInconnu = []
+        f = open(args.f)
+        texte = f.read().lower()
+        dictionnaire = dico_maker(texte, dictionnaire)
+        listeTexteInconnu.append(sort(dictionnaire))
+        f.close()
+    if args.g and args.G:
+        listeDeMarkov = []
+        listeDeTexte = []
+        nombreTotal = [1 for i in range(len(listeDeDico))]
+        # liste du nombre de mot total par auteur
+        for auteur in range(len(listeDeDico)):
+            for i in range(len(listeDeDico[auteur])):
+                nombreTotal[auteur] += listeDeDico[auteur][i][1]
+        # liste de mots de depart
+        mot = ["les" for auteur in range(len(listeDeDico))]
+        for nombreDeMots in args.G:
+
+            for auteur in range(len(listeDeDico)):
+                chaineDeMarkov = []
+                listeDeSuivantelu = []
+                for bigramme in range(len(listeDeDico[auteur])):
+                    motComparer, freq = listeDeDico[auteur][bigramme]
+                    motComparer, suivant = motComparer
+                    if mot[auteur] == motComparer:
+                        chaineDeMarkov.append((suivant, poids(freq, nombreTotal[auteur])))
+                listeDeMarkov.append(chaineDeMarkov)
+            for auteur in range(len(listeDeMarkov)):
+                mot = [listeDeMarkov[auteur][i][0] for i in range(len(listeDeMarkov))]
+                freq = [listeDeMarkov[auteur][i][1] for i in range(len(listeDeMarkov))]
+                listeDeSuivantelu[auteur] = numpy.random.choice(mot, p=freq)
+
+print("caca")
