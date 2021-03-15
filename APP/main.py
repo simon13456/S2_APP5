@@ -55,7 +55,6 @@ from pathlib import Path
 from random import randint
 from random import choice
 
-
 ### Ajouter ici les signes de ponctuation Ã  retirer
 PONC = ["!", '"', "'", ")", "(", ",", ".", ";", ":", "?", "-", "_"]
 
@@ -66,22 +65,26 @@ def dico_maker(texte, dico):
     if not args.P:
         for i in range(len(PONC)):
             texte = texte.replace(PONC[i], " ")
-        text = texte.lower()
-    else:
-        text = texte.lower()
+    texte = texte.lower().split()
     gram = []
     if args.m == 1:
-        gram = texte.split()
+        for i in range(len(texte)):
+            word = texte[i]
+            if len(word) > 2:
+                gram.append(word)
     else:
-        text = texte.split()
-        for i in range(len(text)):
+        i = 0
+        while len(texte[i]) < 3:
+            i += 1
+        while i < len(texte):
             j = i
-            if i+1 != len(text):
-                while j+1 != len(text) and len(text[j + 1]) < 3:
+            if i + 1 != len(texte):
+                while j + 1 != len(texte) and len(texte[j + 1]) < 3:
                     j += 1
-                if j+1 != len(text):
-                    gram.append((text[i], text[j + 1]))
-                i = j
+                if j + 1 != len(texte):
+                    gram.append((texte[i], texte[j + 1]))
+            i = j
+            i += 1
     dictionnairetemp[gram[0]] = 1
     for i in range(len(gram)):
         mot = gram[i]
@@ -90,41 +93,8 @@ def dico_maker(texte, dico):
         dictionnairetemp[mot] += 1
     return dictionnairetemp
 
-
-def mergeSort(myList):
-    if len(myList) > 1:
-        mid = len(myList) // 2
-        left = myList[:mid]
-        right = myList[mid:]
-        # Recursive call on each half
-        mergeSort(left)
-        mergeSort(right)
-        # Two iterators for traversing the two halves
-        i = 0
-        j = 0
-        # Iterator for the main list
-        k = 0
-        while i < len(left) and j < len(right):
-            if left[i] < right[j]:
-                # The value from the left half has been used
-                myList[k] = left[i]
-                # Move the iterator forward
-                i += 1
-            else:
-                myList[k] = right[j]
-                j += 1
-            # Move to the next slot
-            k += 1
-        # For all the remaining values
-        while i < len(left):
-            myList[k] = left[i]
-            i += 1
-            k += 1
-        while j < len(right):
-            myList[k] = right[j]
-            j += 1
-            k += 1
-
+def sort(dictionnaire):
+    return sorted(list(dictionnaire.items()), key=lambda x: x[1],reverse=True)
 
 ### Main: lecture des paramÃ¨tres et appel des mÃ©thodes appropriÃ©es
 ###
@@ -193,6 +163,7 @@ if __name__ == "__main__":
             aut = a.split("/")
             print("    " + aut[-1])
     ### Ã€ partir d'ici, vous devriez inclure les appels Ã  votre code
+
     listeDeDico = []
     for i in range(len(authors)):
         lsdir = os.listdir(rep_aut + '/' + authors[i])
@@ -202,4 +173,4 @@ if __name__ == "__main__":
             texte = f.read().lower()
             dictionnaire = dico_maker(texte, dictionnaire)
             f.close()
-        listeDeDico.append(dictionnaire)
+        listeDeDico.append(sort(dictionnaire))
