@@ -203,30 +203,75 @@ if __name__ == "__main__":
         dictionnaire = dico_maker(texte, dictionnaire)
         listeTexteInconnu.append(sort(dictionnaire))
         f.close()
-    if args.g and args.G:
-        listeDeMarkov = []
-        listeDeTexte = []
-        nombreTotal = [1 for i in range(len(listeDeDico))]
-        # liste du nombre de mot total par auteur
+
+        listeDeMotCommun = []
         for auteur in range(len(listeDeDico)):
-            for i in range(len(listeDeDico[auteur])):
-                nombreTotal[auteur] += listeDeDico[auteur][i][1]
-        # liste de mots de depart
-        mot = ["les" for auteur in range(len(listeDeDico))]
-        for nombreDeMots in args.G:
+            listeDeMotCommun.append([])
 
+        for auteur in range(len(listeDeDico)):
+            for motconnu in listeDeDico[auteur]:
+                for motinconnu in listeTexteInconnu:
+                    if args.m ==2:
+                        if set(listeDeDico[auteur][motconnu][0]) & set(listeTexteInconnu[motinconnu][0]):
+                    else:
+                        if listeDeDico[auteur][motconnu][0]==listeTexteInconnu[motinconnu][0]:
+                            listeDeMotCommun[auteur].append((listeDeDico[auteur][motconnu][0],listeTexteInconnu[motinconnu][1],listeDeDico[auteur][motconnu][1]))
+
+        for auteur in range(len(listeDeDico)):
+            for nombre in range(len(listeDeMotCommun[auteur])):
+                listeDeMotCommun[auteur][nombre][1]/=len(listeDeMotCommun[auteur])
+                listeDeMotCommun[auteur][nombre][2] /= len(listeDeMotCommun[auteur])
+
+        sommeCarre=[]
+        for auteur in range(len(listeDeDico)):
+            for nombre in range(len(listeDeMotCommun[auteur])):
+                sommeCarre[auteur]+= pow((listeDeMotCommun[auteur][nombre][2]-listeDeMotCommun[auteur][nombre][1]),2)
+            sommeCarre[auteur]=math.sqrt(sommeCarre[auteur])
+        for auteur in range(len(listeDeDico)):
+            print(authors[auteur]+": "+sommeCarre[auteur])
+    if args.g and args.G:
+        if args.a:
+            print("dwe")
+        else:
+            listeDeMarkov=[]
             for auteur in range(len(listeDeDico)):
-                chaineDeMarkov = []
-                listeDeSuivantelu = []
-                for bigramme in range(len(listeDeDico[auteur])):
-                    motComparer, freq = listeDeDico[auteur][bigramme]
-                    motComparer, suivant = motComparer
-                    if mot[auteur] == motComparer:
-                        chaineDeMarkov.append((suivant, poids(freq, nombreTotal[auteur])))
-                listeDeMarkov.append(chaineDeMarkov)
-            for auteur in range(len(listeDeMarkov)):
-                mot = [listeDeMarkov[auteur][i][0] for i in range(len(listeDeMarkov))]
-                freq = [listeDeMarkov[auteur][i][1] for i in range(len(listeDeMarkov))]
-                listeDeSuivantelu[auteur] = numpy.random.choice(mot, p=freq)
+                listeDeMarkov.append([])
+            mot = ["les" for auteur in range(len(listeDeDico))]
+            listeDeTexte=[]
+            for auteur in range(len(listeDeDico)):
+                listeDeTexte.append(["les"])
+            nombreTotal = [1 for i in range(len(listeDeDico))]
+            # liste du nombre de mot total par auteur
+            # liste de mots de depart
+            for nombreDeMots in range(args.G):
+                for auteur in range(len(listeDeDico)):
+                    chaineDeMarkov = []
+                    listeDeSuivantelu = []
+                    for bigramme in range(len(listeDeDico[auteur])):
+                        motComparer, freq = listeDeDico[auteur][bigramme]
+                        motComparer, suivant = motComparer
+                        if mot[auteur] == motComparer:
+                            chaineDeMarkov.append((suivant,freq))
+                    listeDeMarkov[auteur]+=chaineDeMarkov
 
-print("caca")
+                for auteur in range(len(listeDeMarkov)):
+                    tot=0
+                    totprobabilite=0
+                    probabilite=[]
+                    motsuivant = [listeDeMarkov[auteur][i][0] for i in range(len(listeDeMarkov[auteur]))]
+                    #probabilite = [listeDeMarkov[auteur][i][1] for i in range(len(listeDeMarkov[auteur]))]
+                    for i in range(len(listeDeMarkov[auteur])):
+                        tot += listeDeMarkov[auteur][i][1]
+                    for i in range(len(listeDeMarkov[auteur])):
+                        probabilite.append(listeDeMarkov[auteur][i][1]/tot)
+                    listeDeSuivantelu.append(numpy.random.choice(motsuivant,p=probabilite))
+                for auteur in range(len(listeDeMarkov)):
+                    listeDeTexte[auteur].append(listeDeSuivantelu[auteur])
+                    mot[auteur]=listeDeSuivantelu[auteur]
+                listeDeSuivantelu.clear()
+            with open(args.g,"w+") as doc:
+                for auteur in range(len(listeDeTexte)):
+                    print(authors[auteur]+":",file=doc)
+                    for mot in range(len(listeDeTexte[auteur])):
+                        print(listeDeTexte[auteur][mot],file=doc, end = " ")
+                    print("\n",file=doc, end = " ")
