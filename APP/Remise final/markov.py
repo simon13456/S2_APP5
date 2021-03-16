@@ -45,7 +45,13 @@
 ###            Format de sortie:  "nom du fichier: auteur"
 ###  avec ou sans -P:  indique que les calculs doivent etre faits avec ou sans ponctuation
 ###  avec -v:  mode verbose, imprimera l'ensemble des valeurs des paramÃ¨tres (fait deja partie du gabarit)
-# -f D:\Simon\Desktop\Repo\S2_APP5\APP\TextesInconnusPourAutoValidation\texte0.txt
+# -d D:\Simon\Desktop\Repo\S2_APP5\APP\TextesPourEtudiants -m 2 -g allo -G 10
+
+#
+# Ce code à été réalisé par Benjamin Gélinas(gelb2602) et Simon Leroux(lers0601)
+# le 17 mars 2021
+# Tutorat T3 et T2 respectivement
+#
 
 import math
 import argparse
